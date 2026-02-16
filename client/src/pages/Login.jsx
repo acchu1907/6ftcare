@@ -1,21 +1,56 @@
-import { Link } from "react-router-dom";
+import "./Login.css";
 
 function Login() {
   return (
-    <div className="auth-container">
-      <h2>Login to 6ftCare</h2>
+    <div className="login-container">
+      
+      {/* LEFT SECTION */}
+      <div className="login-left">
+        <p>
+          <strong>6FeetCare</strong> offers seamless healthcare with expert
+          services in women's health, men's health, addiction prevention,
+          and wellness—supporting you at every step.
+        </p>
 
-      <form className="auth-form">
-        <input type="email" placeholder="Email" required />
-        <input type="password" placeholder="Password" required />
+        <img
+          src="/image6.png"
+          alt="Doctors"
+          className="doctors-image"
+        />
+      </div>
 
-        <button className="btn-primary">Login</button>
-      </form>
+      {/* RIGHT SECTION */}
+      <div className="login-right">
 
-      <p>
-        Don’t have an account?{" "}
-        <Link to="/register">Register</Link>
-      </p>
+        <div className="login-box">
+
+          <a href="/" className="skip">Skip</a>
+
+          <div className="icon-circle">🩺</div>
+
+          <input type="email" placeholder="Enter Email" />
+          <input type="password" placeholder="Enter Password" />
+
+          <div className="forgot">
+            <a href="#">Forgot Password?</a>
+          </div>
+
+          <p>
+            Don’t have account? <a href="/register">Sign up</a>
+          </p>
+
+          <button className="login-btn">Log In</button>
+
+          <p className="or">or</p>
+
+          <div className="social-icons">
+            <img src="/googleicon.png" alt="Google" />
+          
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 }

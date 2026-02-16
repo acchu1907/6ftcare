@@ -13,7 +13,7 @@ function Home() {
   </div>
 
   <div className="hero-image">
-    <img src="/dr_illustration.png" alt="Doctor Illustration" />
+    <img src="/image7.png" alt="Doctor Illustration" />
 
   </div>
 </section>
@@ -61,7 +61,7 @@ function Home() {
   </div>
 
   <div className="about-image">
-    <img src="/image5.png" alt="About 6ftCare" />
+    <img src="/image8.png" alt="About 6ftCare" />
   </div>
 </section>
 
