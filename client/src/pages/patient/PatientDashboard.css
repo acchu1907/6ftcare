@@ -1,0 +1,111 @@
+.patient-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #0d47a1;
+  color: white;
+  padding: 20px;
+}
+
+.sidebar h3 {
+  margin-bottom: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  margin: 12px 0;
+  cursor: pointer;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  background: #f4f8ff;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  margin: 15px 0;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  flex: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.section {
+  margin-top: 30px;
+}
+
+.appointment-card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 20px;
+}
+
+.actions button {
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  background: #0d47a1;
+  color: white;
+  cursor: pointer;
+}
+
+/* BOOKING SECTION CARD */
+.booking-section {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 25px;
+}
+
+/* SELECT CONTAINER */
+.booking-controls {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+/* MODERN SELECT STYLE */
+.booking-controls select {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #dcdcdc;
+  background: #f4f8ff;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 150px;
+  transition: 0.2s ease;
+}
+
+.booking-controls select:hover {
+  border-color: #0d47a1;
+}
+
+.booking-controls select:focus {
+  outline: none;
+  border-color: #0d47a1;
+  box-shadow: 0 0 4px rgba(13, 71, 161, 0.3);
+}
