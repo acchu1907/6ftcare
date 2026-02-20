@@ -20,6 +20,8 @@
   padding: 0;
 }
 
+
+
 .sidebar li {
   margin: 12px 0;
   cursor: pointer;
@@ -108,4 +110,81 @@
   outline: none;
   border-color: #0d47a1;
   box-shadow: 0 0 4px rgba(13, 71, 161, 0.3);
+}
+
+.booking-card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 25px;
+}
+
+.booking-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.booking-row select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #f4f8ff;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.booking-row select:disabled {
+  background: #eee;
+  cursor: not-allowed;
+}
+
+.doctor-list {
+  margin-top: 20px;
+}
+
+.doctor-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fbff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.doctor-card button {
+  background: #0d47a1;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doctor-card button:hover {
+  opacity: 0.9;
+}
+
+.cancel-btn {
+  margin-top: 8px;
+  background: #d32f2f;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sidebar ul li {
+  cursor: pointer;
+  padding: 10px 0;
+  transition: 0.2s;
+}
+
+.sidebar ul li.active {
+  font-weight: bold;
+  background: rgba(255,255,255,0.15);
+  padding-left: 10px;
+  border-radius: 6px;
 }
