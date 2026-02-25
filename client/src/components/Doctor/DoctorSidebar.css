@@ -1,0 +1,48 @@
+.doctor-sidebar {
+  width: 260px;
+  height: calc(100vh - 80px); /* minus navbar height */
+  background: #b9c9e6;
+  padding: 40px 20px;
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+
+  position: fixed;
+  left: 0;
+  top: 80px; /* push below navbar */
+}
+
+.sidebar-logo {
+  color: white;
+  margin-bottom: 40px;
+  font-family: "Poppins", sans-serif;
+}
+
+.sidebar-links {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-links a {
+  text-decoration: none;
+  padding: 12px 18px;
+  border-radius: 25px;
+  background: white;
+  color: #3c5a99;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.sidebar-links a:hover {
+  background: #3c5a99;
+  color: white;
+  transform: translateX(5px);
+}
+
+/* Active Route Styling */
+.sidebar-links a.active {
+  background: linear-gradient(135deg, #7f7fd5, #86a8e7);
+  color: white;
+}
+
