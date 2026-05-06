@@ -22,6 +22,10 @@ const handleLogin = async () => {
     // Save token + role
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("role", res.data.role);
+    localStorage.setItem(
+      "user",
+      JSON.stringify(res.data.user)
+    );
 
     // Redirect based on role
     

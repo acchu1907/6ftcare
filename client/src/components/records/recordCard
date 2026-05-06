@@ -1,0 +1,56 @@
+// using it for patient now but we can reuse it for doctor and admin as well with some tweaks
+
+import { useState } from "react";
+
+function RecordCard({ record, onRename }) {
+
+  const [editing, setEditing] = useState(false);
+  const [newName, setNewName] = useState(record.fileName);
+
+
+  const openFile = () => {
+    window.open(record.fileUrl, "_blank");
+  };
+
+
+  return (
+
+    <div className="record-card">
+
+      <div onClick={openFile}>
+        <h4>{record.fileName}</h4>
+      </div>
+
+
+      {editing ? (
+
+        <>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+
+          <button
+            onClick={() => {
+              onRename(record._id, newName);
+              setEditing(false);
+            }}
+          >
+            Save
+          </button>
+        </>
+
+      ) : (
+
+        <button onClick={() => setEditing(true)}>
+          Rename
+        </button>
+
+      )}
+
+    </div>
+
+  );
+}
+
+export default RecordCard;

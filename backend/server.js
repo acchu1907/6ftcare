@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const authRoutes = require("./routes/auth");
+//for patient 
+const patientRoutes = require("./routes/patient");
 
 const app = express();
 
@@ -12,8 +14,12 @@ app.use(express.json());
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI);
+console.log("Connected to MongoDB");
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/patient", patientRoutes);
+
+
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

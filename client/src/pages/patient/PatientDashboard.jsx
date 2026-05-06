@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./PatientDashboard.css";
 import Navbar from "../../components/Navbar";
+import axios from "axios";
 
 function PatientDashboard() {
 
@@ -45,10 +46,7 @@ function PatientDashboard() {
   // ================= STATE =================
   const [activeView, setActiveView] = useState("dashboard");
 
-  const [appointments, setAppointments] = useState(() => {
-    const saved = localStorage.getItem("appointments");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [appointments, setAppointments] = useState([]);
 
   const [reports, setReports] = useState(5);
 
@@ -57,10 +55,10 @@ function PatientDashboard() {
   const [selectedTime, setSelectedTime] = useState("");
   const [availableDoctors, setAvailableDoctors] = useState([]);
 
-  // Save to localStorage
-  useEffect(() => {
-    localStorage.setItem("appointments", JSON.stringify(appointments));
-  }, [appointments]);
+  const user = JSON.parse(localStorage.getItem("user"));
+  console.log(user);
+
+
 
   // ================= HANDLERS =================
   const handleHospitalChange = (e) => {
@@ -69,6 +67,24 @@ function PatientDashboard() {
     setSelectedTime("");
     setAvailableDoctors([]);
   };
+
+  const fetchAppointments = async () => {
+
+  try {
+
+    const response = await axios.get(
+      `http://localhost:5000/api/patient/appointments?patientId=${user._id}`
+    );
+
+    setAppointments(response.data);
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
 
   const handleDayChange = (e) => {
     const day = e.target.value;
@@ -88,43 +104,84 @@ function PatientDashboard() {
     setAvailableDoctors(doctors);
   };
 
+  useEffect(() => {
+  fetchAppointments();
+}, []);
+
   const handleTimeChange = (e) => {
     setSelectedTime(e.target.value);
   };
 
-  const handleConfirm = (doctor) => {
-    if (!selectedHospital || !selectedDay || !selectedTime) {
-      alert("Please complete selections");
-      return;
-    }
+  const handleConfirm = async (doctor) => {
 
-    const exists = appointments.find(
-      (a) =>
-        a.doctor === doctor.name &&
-        a.date === `${selectedHospital} - ${selectedDay} ${selectedTime}`
+  if (!selectedHospital || !selectedDay || !selectedTime) {
+    alert("Please complete selections");
+    return;
+  }
+
+  try {
+
+    await axios.post(
+      "http://localhost:5000/api/patient/book",
+      {
+        patientId: user._id,
+        doctorName: doctor.name,
+        speciality: doctor.speciality,
+        hospital: selectedHospital,
+        date: selectedDay,
+        time: selectedTime,
+      }
     );
 
-    if (exists) {
-      alert("This slot is already booked");
-      return;
-    }
+alert("Appointment booked successfully");
 
-    setAppointments((prev) => [
-      ...prev,
-      {
-        doctor: doctor.name,
-        speciality: doctor.speciality,
-        date: `${selectedHospital} - ${selectedDay} ${selectedTime}`,
-        status: "Confirmed",
-      },
-    ]);
-  };
+fetchAppointments();
 
-  const cancelAppointment = (index) => {
-    const updated = [...appointments];
-    updated.splice(index, 1);
-    setAppointments(updated);
-  };
+setSelectedHospital("");
+setSelectedDay("");
+setSelectedTime("");
+setAvailableDoctors([]);
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert("Booking failed");
+  }
+};
+const upcomingAppointments = appointments.filter(
+  (a) =>
+    a.status === "Pending" ||
+    a.status === "Confirmed"
+);
+
+const previousAppointments = appointments.filter(
+  (a) =>
+    a.status === "Closed" ||
+    a.status === "Cancelled" ||
+    a.status === "Rejected"
+);
+
+const cancelAppointment = async (id) => {
+  
+
+  try {
+
+    await axios.put(
+      `http://localhost:5000/api/patient/cancel/${id}`
+    );
+
+    fetchAppointments();
+
+  } catch (error) {
+
+    console.log(error);
+
+    alert("Cancel failed");
+
+  }
+
+};
 
   // ================= UI =================
   return (
@@ -178,72 +235,22 @@ function PatientDashboard() {
 
         {/* MAIN CONTENT */}
         <div className="main-content">
-          <h2>Welcome, Patient 👋</h2>
+          <h2>
+            Welcome, {user?.name || "Patient"}
+          </h2>
 
           {/* ================= DASHBOARD VIEW ================= */}
           {activeView === "dashboard" && (
             <>
-              <div className="booking-card">
-                <div className="booking-row">
-                  <select onChange={handleHospitalChange}>
-                    <option value="">Select Hospital</option>
-                    {hospitalsData.map((h, i) => (
-                      <option key={i} value={h.name}>
-                        {h.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-                    disabled={!selectedHospital}
-                    onChange={handleDayChange}
-                  >
-                    <option value="">Select Day</option>
-                    <option>Monday</option>
-                    <option>Tuesday</option>
-                    <option>Wednesday</option>
-                    <option>Thursday</option>
-                  </select>
-
-                  <select
-                    disabled={!selectedDay}
-                    onChange={handleTimeChange}
-                  >
-                    <option value="">Select Time</option>
-                    {availableDoctors.flatMap((d) =>
-                      d.availability[selectedDay]?.map((time, i) => (
-                        <option key={i} value={time}>
-                          {time}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                {availableDoctors.length > 0 && selectedTime && (
-                  <div className="doctor-list">
-                    {availableDoctors.map((d, i) => (
-                      <div key={i} className="doctor-card">
-                        <div>
-                          <strong>{d.name}</strong>
-                          <p>{d.speciality}</p>
-                        </div>
-                        <button onClick={() => handleConfirm(d)}>
-                          Confirm
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div className="stats">
                 <div className="card">
                   Upcoming Appointments: {appointments.length}
                 </div>
+
                 <div className="card">
                   Reports Uploaded: {reports}
                 </div>
+
                 <div className="card">
                   Prescriptions: 3
                 </div>
@@ -254,25 +261,151 @@ function PatientDashboard() {
           {/* ================= APPOINTMENTS VIEW ================= */}
           {activeView === "appointments" && (
             <div className="section">
-              <h3>All Appointments</h3>
 
-              {appointments.length === 0 && (
-                <p>No appointments yet.</p>
+              {/* ===== ADD APPOINTMENT ===== */}
+              <h3>Add Appointment</h3>
+
+              <div className="booking-card">
+
+                <div className="booking-row">
+
+                  <select
+  value={selectedHospital}
+  onChange={handleHospitalChange}
+>
+                    <option value="">Select Hospital</option>
+
+                    {hospitalsData.map((h, i) => (
+                      <option key={i} value={h.name}>
+                        {h.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+  value={selectedDay}
+  disabled={!selectedHospital}
+  onChange={handleDayChange}
+>
+                    <option value="">Select Day</option>
+
+                    <option>Monday</option>
+                    <option>Tuesday</option>
+                    <option>Wednesday</option>
+                    <option>Thursday</option>
+                    <option>Friday</option>
+                    <option>Saturday</option>
+
+                  </select>
+
+
+<select
+  value={selectedTime}
+  disabled={!selectedDay}
+  onChange={handleTimeChange}
+>
+
+<option value="">Select Time</option>
+
+{availableDoctors.map((doctor) =>
+  doctor.availability[selectedDay]?.map((time, index) => (
+    <option
+      key={`${doctor.name}-${index}`}
+      value={time}
+    >
+      {time}
+    </option>
+  ))
+)}
+
+</select>
+
+                </div>
+
+                {availableDoctors.length > 0 && selectedTime && (
+
+                  <div className="doctor-list">
+
+                    {availableDoctors.map((d, i) => (
+
+                      <div key={i} className="doctor-card">
+
+                        <div>
+                          <strong>{d.name}</strong>
+                          <p>{d.speciality}</p>
+                        </div>
+
+                        <button onClick={() => handleConfirm(d)}>
+                          Confirm
+                        </button>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+              </div>
+
+              {/* ===== UPCOMING APPOINTMENTS ===== */}
+              <h3>Upcoming Appointments</h3>
+
+              {upcomingAppointments.length === 0 && (
+                <p>No upcoming appointments.</p>
               )}
 
-              {appointments.map((a, index) => (
+              {upcomingAppointments.map((a, index) => (
+
                 <div key={index} className="appointment-card">
-                  <p><strong>{a.doctor}</strong> - {a.speciality}</p>
-                  <p>{a.date}</p>
+
+                  <p>
+                    <strong>{a.doctorName}</strong> - {a.speciality}
+                  </p>
+
+                  <p>
+                    {a.hospital} - {a.date} - {a.time}
+                  </p>
+
                   <p>Status: {a.status}</p>
+
                   <button
                     className="cancel-btn"
-                    onClick={() => cancelAppointment(index)}
+                    onClick={() => cancelAppointment(a._id)}
                   >
                     Cancel
                   </button>
+
                 </div>
+
               ))}
+
+              {/* ===== PREVIOUS APPOINTMENTS ===== */}
+              <h3>Previous Appointments</h3>
+
+              {previousAppointments.length === 0 && (
+                <p>No previous appointments.</p>
+              )}
+
+              {previousAppointments.map((a, index) => (
+
+                <div key={index} className="appointment-card">
+
+                  <p>
+                    <strong>{a.doctorName}</strong> - {a.speciality}
+                  </p>
+
+                  <p>
+                    {a.hospital} - {a.date} - {a.time}
+                  </p>
+
+                  <p>Status: {a.status}</p>
+
+                </div>
+
+              ))}
+
             </div>
           )}
 
