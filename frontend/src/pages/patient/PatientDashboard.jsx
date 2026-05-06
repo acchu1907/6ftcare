@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import "./PatientDashboard.css";
-import Navbar from "../../components/Navbar";
 import axios from "axios";
 
 function PatientDashboard() {
@@ -45,24 +44,59 @@ function PatientDashboard() {
 
   // ================= STATE =================
   const [activeView, setActiveView] = useState("dashboard");
-
   const [appointments, setAppointments] = useState([]);
-
-  const [reports, setReports] = useState(5);
+  const [reports, setReports] = useState([]);
+  const [records, setRecords] = useState([]);
 
   const [selectedHospital, setSelectedHospital] = useState("");
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [availableDoctors, setAvailableDoctors] = useState([]);
 
+  const [newRecordName, setNewRecordName] = useState("");
+
+  const [health, setHealth] = useState({
+    bp: "",
+    sugar: "",
+    bmi: ""
+  });
+
+  const [medicine, setMedicine] = useState("");
+  const [orders, setOrders] = useState([]);
+
   const user = JSON.parse(localStorage.getItem("user"));
-  console.log(user);
 
-// for medical records
-  const [records, setRecords] = useState([]);
+  // ================= FETCH =================
+  const fetchAppointments = async () => {
+    const res = await axios.get(`http://localhost:5000/api/patient/appointments?patientId=${user._id}`);
+    setAppointments(res.data);
+  };
 
+  const fetchRecords = async () => {
+    const res = await axios.get(`http://localhost:5000/api/records/${user._id}`);
+    setRecords(res.data);
+  };
+
+  const fetchHealth = async () => {
+    const res = await axios.get(`http://localhost:5000/api/health/${user._id}`);
+    if (res.data) setHealth(res.data);
+  };
+  const fetchOrders = async () => {
+  const res = await axios.get("http://localhost:5000/api/pharmacy", {
+    headers: { Authorization: localStorage.getItem("token") }
+  });
+  setOrders(res.data);
+};
+
+  useEffect(() => {
+    fetchAppointments();
+    fetchRecords();
+    fetchHealth();
+    fetchOrders();
+  }, []);
 
   // ================= HANDLERS =================
+
   const handleHospitalChange = (e) => {
     setSelectedHospital(e.target.value);
     setSelectedDay("");
@@ -70,430 +104,291 @@ function PatientDashboard() {
     setAvailableDoctors([]);
   };
 
-  const fetchAppointments = async () => {
-
-  try {
-
-    const response = await axios.get(
-      `http://localhost:5000/api/patient/appointments?patientId=${user._id}`
-    );
-
-    setAppointments(response.data);
-
-  } catch (error) {
-
-    console.log(error);
-
-  }
-
-};
-
   const handleDayChange = (e) => {
     const day = e.target.value;
     setSelectedDay(day);
     setSelectedTime("");
 
-    const hospital = hospitalsData.find(
-      (h) => h.name === selectedHospital
-    );
-
+    const hospital = hospitalsData.find(h => h.name === selectedHospital);
     if (!hospital) return;
 
-    const doctors = hospital.doctors.filter(
-      (d) => d.availability[day]
-    );
-
+    const doctors = hospital.doctors.filter(d => d.availability[day]);
     setAvailableDoctors(doctors);
   };
-
-
 
   const handleTimeChange = (e) => {
     setSelectedTime(e.target.value);
   };
 
   const handleConfirm = async (doctor) => {
+    if (!selectedHospital || !selectedDay || !selectedTime) {
+      alert("Complete selections");
+      return;
+    }
 
-  if (!selectedHospital || !selectedDay || !selectedTime) {
-    alert("Please complete selections");
-    return;
-  }
+    await axios.post("http://localhost:5000/api/patient/book", {
+      patientId: user._id,
+      doctorName: doctor.name,
+      speciality: doctor.speciality,
+      hospital: selectedHospital,
+      date: selectedDay,
+      time: selectedTime,
+    });
 
+    alert("Booked");
+    fetchAppointments();
+
+    setSelectedHospital("");
+    setSelectedDay("");
+    setSelectedTime("");
+    setAvailableDoctors([]);
+  };
+
+  const cancelAppointment = async (id) => {
+    await axios.put(`http://localhost:5000/api/patient/cancel/${id}`);
+    fetchAppointments();
+  };
+
+  const handleUploadRecord = async () => {
+    if (!newRecordName) return;
+
+    await axios.post("http://localhost:5000/api/records/upload", {
+      patientId: user._id,
+      fileName: newRecordName,
+      fileUrl: "dummy.pdf"
+    });
+
+    setNewRecordName("");
+    fetchRecords();
+  };
+
+  const handleSaveHealth = async () => {
+    await axios.post("http://localhost:5000/api/health", {
+      patientId: user._id,
+      ...health
+    });
+
+    alert("Saved");
+  };
+
+  const upcomingAppointments = appointments.filter(
+    a => a.status === "Pending" || a.status === "Confirmed"
+  );
+
+  const previousAppointments = appointments.filter(
+    a => ["Closed", "Cancelled", "Rejected"].includes(a.status)
+  );
+const [profile, setProfile] = useState({
+  name: user?.name || "",
+  email: user?.email || ""
+});
+
+const handleProfileUpdate = async () => {
   try {
-
-    await axios.post(
-      "http://localhost:5000/api/patient/book",
+    const res = await axios.put(
+      "http://localhost:5000/api/auth/update",
+      profile,
       {
-        patientId: user._id,
-        doctorName: doctor.name,
-        speciality: doctor.speciality,
-        hospital: selectedHospital,
-        date: selectedDay,
-        time: selectedTime,
+        headers: { Authorization: localStorage.getItem("token") }
       }
     );
 
-alert("Appointment booked successfully");
+    localStorage.setItem("user", JSON.stringify(res.data));
 
-fetchAppointments();
+    alert("Profile updated");
 
-setSelectedHospital("");
-setSelectedDay("");
-setSelectedTime("");
-setAvailableDoctors([]);
-
-  } catch (error) {
-
-    console.log(error);
-
-    alert("Booking failed");
+  } catch (err) {
+    alert("Update failed");
   }
 };
-const upcomingAppointments = appointments.filter(
-  (a) =>
-    a.status === "Pending" ||
-    a.status === "Confirmed"
-);
 
-const previousAppointments = appointments.filter(
-  (a) =>
-    a.status === "Closed" ||
-    a.status === "Cancelled" ||
-    a.status === "Rejected"
-);
+const handleOrder = async () => {
+  if (!medicine) return;
 
-const cancelAppointment = async (id) => {
-  
+  await axios.post(
+    "http://localhost:5000/api/pharmacy/order",
+    { medicine },
+    {
+      headers: { Authorization: localStorage.getItem("token") }
+    }
+  );
 
-  try {
-
-    await axios.put(
-      `http://localhost:5000/api/patient/cancel/${id}`
-    );
-
-    fetchAppointments();
-
-
-  } catch (error) {
-
-    console.log(error);
-
-    alert("Cancel failed");
-
-  }
-
+  setMedicine("");
+  fetchOrders();
 };
-
-//for medical records
-
-const fetchRecords = async () => {
-
-  try {
-
-    const response = await axios.get(
-      `http://localhost:5000/api/records/${user._id}`
-    );
-console.log(response.data);
-    setRecords(response.data);
-
-  } catch (error) {
-
-    console.log(error);
-
-  }
-
-};
-
-
-  useEffect(() => {
-  fetchAppointments();
-
-  //for medical records
-  
-  fetchRecords();
-}, []);
-
   // ================= UI =================
   return (
-    <>
-      
-
-      <div className="patient-container">
-
-        {/* SIDEBAR */}
-        <div className="sidebar">
-          <h3>Patient Panel</h3>
-          <ul>
-            <li
-              className={activeView === "dashboard" ? "active" : ""}
-              onClick={() => setActiveView("dashboard")}
-            >
-              Dashboard
-            </li>
-            <li
-              className={activeView === "appointments" ? "active" : ""}
-              onClick={() => setActiveView("appointments")}
-            >
-              Appointments
-            </li>
-            <li
-              className={activeView === "records" ? "active" : ""}
-              onClick={() => setActiveView("records")}
-            >
-              Medical Records
-            </li>
-            <li
-              className={activeView === "health" ? "active" : ""}
-              onClick={() => setActiveView("health")}
-            >
-              Health Data
-            </li>
-            <li
-              className={activeView === "pharmacy" ? "active" : ""}
-              onClick={() => setActiveView("pharmacy")}
-            >
-              Pharmacy
-            </li>
-            <li
-              className={activeView === "profile" ? "active" : ""}
-              onClick={() => setActiveView("profile")}
-            >
-              Profile
-            </li>
-          </ul>
-        </div>
-
-        {/* MAIN CONTENT */}
-        <div className="main-content">
-          <h2>
-            Welcome, {user?.name || "Patient"}
-          </h2>
-
-          {/* ================= DASHBOARD VIEW ================= */}
-          {activeView === "dashboard" && (
-            <>
-              <div className="stats">
-                <div className="card">
-                  Upcoming Appointments: {appointments.length}
-                </div>
-
-                <div className="card">
-                  Reports Uploaded: {reports}
-                </div>
-
-                <div className="card">
-                  Prescriptions: 3
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ================= APPOINTMENTS VIEW ================= */}
-          {activeView === "appointments" && (
-            <div className="section">
-
-              {/* ===== ADD APPOINTMENT ===== */}
-              <h3>Add Appointment</h3>
-
-              <div className="booking-card">
-
-                <div className="booking-row">
-
-                  <select
-  value={selectedHospital}
-  onChange={handleHospitalChange}
->
-                    <option value="">Select Hospital</option>
-
-                    {hospitalsData.map((h, i) => (
-                      <option key={i} value={h.name}>
-                        {h.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <select
-  value={selectedDay}
-  disabled={!selectedHospital}
-  onChange={handleDayChange}
->
-                    <option value="">Select Day</option>
-
-                    <option>Monday</option>
-                    <option>Tuesday</option>
-                    <option>Wednesday</option>
-                    <option>Thursday</option>
-                    <option>Friday</option>
-                    <option>Saturday</option>
-
-                  </select>
-
-
-<select
-  value={selectedTime}
-  disabled={!selectedDay}
-  onChange={handleTimeChange}
->
-
-<option value="">Select Time</option>
-
-{availableDoctors.map((doctor) =>
-  doctor.availability[selectedDay]?.map((time, index) => (
-    <option
-      key={`${doctor.name}-${index}`}
-      value={time}
-    >
-      {time}
-    </option>
-  ))
-)}
-
-</select>
-
-                </div>
-
-                {availableDoctors.length > 0 && selectedTime && (
-
-                  <div className="doctor-list">
-
-                    {availableDoctors.map((d, i) => (
-
-                      <div key={i} className="doctor-card">
-
-                        <div>
-                          <strong>{d.name}</strong>
-                          <p>{d.speciality}</p>
-                        </div>
-
-                        <button onClick={() => handleConfirm(d)}>
-                          Confirm
-                        </button>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-              </div>
-
-              {/* ===== UPCOMING APPOINTMENTS ===== */}
-              <h3>Upcoming Appointments</h3>
-
-              {upcomingAppointments.length === 0 && (
-                <p>No upcoming appointments.</p>
-              )}
-
-              {upcomingAppointments.map((a, index) => (
-
-                <div key={index} className="appointment-card">
-
-                  <p>
-                    <strong>{a.doctorName}</strong> - {a.speciality}
-                  </p>
-
-                  <p>
-                    {a.hospital} - {a.date} - {a.time}
-                  </p>
-
-                  <p>Status: {a.status}</p>
-
-                  <button
-                    className="cancel-btn"
-                    onClick={() => cancelAppointment(a._id)}
-                  >
-                    Cancel
-                  </button>
-
-                </div>
-
-              ))}
-
-              {/* ===== PREVIOUS APPOINTMENTS ===== */}
-              <h3>Previous Appointments</h3>
-
-              {previousAppointments.length === 0 && (
-                <p>No previous appointments.</p>
-              )}
-
-              {previousAppointments.map((a, index) => (
-
-                <div key={index} className="appointment-card">
-
-                  <p>
-                    <strong>{a.doctorName}</strong> - {a.speciality}
-                  </p>
-
-                  <p>
-                    {a.hospital} - {a.date} - {a.time}
-                  </p>
-
-                  <p>Status: {a.status}</p>
-
-                </div>
-
-              ))}
-
-            </div>
-          )}
-
-{activeView === "records" && (
-
-  <div className="section">
-
-    <h3>Medical Records</h3>
-
-    <div className="records-grid">
-
-      {records.map((record) => (
-
-        <div
-          key={record._id}
-          className="record-card"
-        >
-
-          <h4>{record.fileName}</h4>
-
-          <button>
-            Open
-          </button>
-
-        </div>
-
-      ))}
-
-    </div>
-
-  </div>
-
-)}
-
-          {activeView === "health" && (
-            <div className="section">
-              <h3>Health Data</h3>
-              <p>Track BP, Sugar, BMI and more.</p>
-            </div>
-          )}
-
-          {activeView === "pharmacy" && (
-            <div className="section">
-              <h3>Pharmacy</h3>
-              <p>Order medicines online.</p>
-            </div>
-          )}
-
-          {activeView === "profile" && (
-            <div className="section">
-              <h3>Profile</h3>
-              <p>Manage your personal details.</p>
-            </div>
-          )}
-
-        </div>
+    <div className="patient-container">
+
+      {/* SIDEBAR */}
+      <div className="sidebar">
+        <h3>Patient Panel</h3>
+        <ul>
+          <li onClick={() => setActiveView("dashboard")}>Dashboard</li>
+          <li onClick={() => setActiveView("appointments")}>Appointments</li>
+          <li onClick={() => setActiveView("records")}>Medical Records</li>
+          <li onClick={() => setActiveView("health")}>Health Data</li>
+          <li onClick={()=>setActiveView("pharmacy")}>Pharmacy</li> 
+          <li onClick={()=>setActiveView("profile")}>Profile</li> 
+        </ul>
       </div>
-    </>
+
+      {/* MAIN */}
+      <div className="main-content">
+        <h2>Welcome, {user?.name}</h2>
+
+        {/* DASHBOARD */}
+        {activeView === "dashboard" && (
+          <div className="stats">
+            <div className="card">Appointments: {appointments.length}</div>
+            <div className="card">Reports: {records.length}</div>
+          </div>
+        )}
+
+        {/* APPOINTMENTS */}
+        {activeView === "appointments" && (
+          <>
+            <select value={selectedHospital} onChange={handleHospitalChange}>
+              <option>Select Hospital</option>
+              {hospitalsData.map(h => <option key={h.name}>{h.name}</option>)}
+            </select>
+
+            <select value={selectedDay} onChange={handleDayChange}>
+              <option>Select Day</option>
+              <option>Monday</option>
+              <option>Tuesday</option>
+            </select>
+
+            <select value={selectedTime} onChange={handleTimeChange}>
+              <option>Select Time</option>
+              {availableDoctors.flatMap(d =>
+                d.availability[selectedDay]?.map((t, i) =>
+                  <option key={i}>{t}</option>
+                )
+              )}
+            </select>
+
+            {availableDoctors.map(d => (
+              <div key={d.name}>
+                {d.name}
+                <button onClick={() => handleConfirm(d)}>Confirm</button>
+              </div>
+            ))}
+
+            <h3>Upcoming</h3>
+            {upcomingAppointments.map(a => (
+              <div key={a._id}>
+                {a.doctorName}
+                <button onClick={() => cancelAppointment(a._id)}>Cancel</button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* RECORDS */}
+        {activeView === "records" && (
+          <>
+            <input
+              value={newRecordName}
+              onChange={(e) => setNewRecordName(e.target.value)}
+              placeholder="Record name"
+            />
+            <button onClick={handleUploadRecord}>Upload</button>
+
+            {records.map(r => (
+              <div key={r._id}>{r.fileName}</div>
+            ))}
+          </>
+        )}
+
+        {/* HEALTH */}
+        {activeView === "health" && (
+          <>
+            <input
+              placeholder="BP"
+              value={health.bp}
+              onChange={(e) => setHealth({ ...health, bp: e.target.value })}
+            />
+            <input
+              placeholder="Sugar"
+              value={health.sugar}
+              onChange={(e) => setHealth({ ...health, sugar: e.target.value })}
+            />
+            <input
+              placeholder="BMI"
+              value={health.bmi}
+              onChange={(e) => setHealth({ ...health, bmi: e.target.value })}
+            />
+
+            <button onClick={handleSaveHealth}>Save</button>
+             
+           
+          </>
+        )}
+        {/* PHARMACY */}
+        {activeView === "pharmacy" && (
+  <div className="section">
+    
+
+    <input
+      placeholder="Enter medicine name"
+      value={medicine}
+      onChange={(e) => setMedicine(e.target.value)}
+    />
+
+    <button onClick={handleOrder}>
+      Order
+    </button>
+
+    <h4>Your Orders</h4>
+
+    {orders.length === 0 && <p>No orders yet</p>}
+
+    {orders.map((o) => (
+      <div key={o._id}>
+        {o.medicine} - {o.status}
+      </div>
+    ))}
+  </div>
+)}
+        {/* PROFILE */} 
+        {activeView === "profile" && (
+  <div className="section">
+    <h3>Profile</h3>
+
+    <input
+      value={profile.name}
+      onChange={(e) =>
+        setProfile({ ...profile, name: e.target.value })
+      }
+    />
+
+    <input
+      value={profile.email}
+      onChange={(e) =>
+        setProfile({ ...profile, email: e.target.value })
+      }
+    />
+
+    <button onClick={handleProfileUpdate}>
+      Save Changes
+    </button>
+
+    <button
+      onClick={() => {
+        localStorage.clear();
+        window.location.href = "/login";
+      }}
+    >
+      Logout
+    </button>
+  </div>
+)}
+      
+        
+
+      </div>
+    </div>
   );
 }
 
