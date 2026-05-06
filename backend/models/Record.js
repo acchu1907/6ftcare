@@ -9,6 +9,8 @@ const recordSchema = new mongoose.Schema({
 
   fileName: String,
 
+  fileType: String,
+
   fileUrl: String,
 
 }, { timestamps: true });

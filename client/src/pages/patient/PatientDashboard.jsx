@@ -58,6 +58,8 @@ function PatientDashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
   console.log(user);
 
+// for medical records
+  const [records, setRecords] = useState([]);
 
 
   // ================= HANDLERS =================
@@ -104,9 +106,7 @@ function PatientDashboard() {
     setAvailableDoctors(doctors);
   };
 
-  useEffect(() => {
-  fetchAppointments();
-}, []);
+
 
   const handleTimeChange = (e) => {
     setSelectedTime(e.target.value);
@@ -173,6 +173,7 @@ const cancelAppointment = async (id) => {
 
     fetchAppointments();
 
+
   } catch (error) {
 
     console.log(error);
@@ -182,6 +183,35 @@ const cancelAppointment = async (id) => {
   }
 
 };
+
+//for medical records
+
+const fetchRecords = async () => {
+
+  try {
+
+    const response = await axios.get(
+      `http://localhost:5000/api/records/${user._id}`
+    );
+console.log(response.data);
+    setRecords(response.data);
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
+
+  useEffect(() => {
+  fetchAppointments();
+
+  //for medical records
+  
+  fetchRecords();
+}, []);
 
   // ================= UI =================
   return (
@@ -409,13 +439,36 @@ const cancelAppointment = async (id) => {
             </div>
           )}
 
-          {/* ================= PLACEHOLDER VIEWS ================= */}
-          {activeView === "records" && (
-            <div className="section">
-              <h3>Medical Records</h3>
-              <p>Upload and manage medical reports here.</p>
-            </div>
-          )}
+{activeView === "records" && (
+
+  <div className="section">
+
+    <h3>Medical Records</h3>
+
+    <div className="records-grid">
+
+      {records.map((record) => (
+
+        <div
+          key={record._id}
+          className="record-card"
+        >
+
+          <h4>{record.fileName}</h4>
+
+          <button>
+            Open
+          </button>
+
+        </div>
+
+      ))}
+
+    </div>
+
+  </div>
+
+)}
 
           {activeView === "health" && (
             <div className="section">

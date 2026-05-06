@@ -6,6 +6,8 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth");
 //for patient 
 const patientRoutes = require("./routes/patient");
+const recordsRoutes = require("./routes/records");
+
 
 const app = express();
 
@@ -18,6 +20,7 @@ console.log("Connected to MongoDB");
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/patient", patientRoutes);
+app.use("/api/records", recordsRoutes);
 
 
 
