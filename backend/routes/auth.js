@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -16,6 +17,14 @@ router.post("/register", async (req, res) => {
     email,
     password: hashed,
     role,
+    bloodGroup: req.body.bloodGroup,
+    emergencyContact: {
+      name: req.body.emergencyContact.name,
+      phone: req.body.emergencyContact.phone,
+      relation: req.body.emergencyContact.relation
+    } 
+
+
   });
 
   await user.save();

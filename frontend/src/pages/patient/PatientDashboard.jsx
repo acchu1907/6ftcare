@@ -44,7 +44,9 @@ function PatientDashboard() {
 
   // ================= STATE =================
   const [activeView, setActiveView] = useState("dashboard");
+  const user = JSON.parse(localStorage.getItem("user"));
   const [appointments, setAppointments] = useState([]);
+  const [latestAppointment, setLatestAppointment] = useState(null);
   const [reports, setReports] = useState([]);
   const [records, setRecords] = useState([]);
 
@@ -63,8 +65,18 @@ function PatientDashboard() {
 
   const [medicine, setMedicine] = useState("");
   const [orders, setOrders] = useState([]);
+  const [profile, setProfile] = useState({
+  name: user?.name || "",
+  email: user?.email || "",
+  bloodGroup: user?.bloodGroup || "",
+  emergencyContact: {
+    name: user?.emergencyContact?.name || "",
+    phone: user?.emergencyContact?.phone || "",
+    relation: user?.emergencyContact?.relation || ""
+  }
+});
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  
 
   // ================= FETCH =================
   const fetchAppointments = async () => {
@@ -120,34 +132,49 @@ function PatientDashboard() {
     setSelectedTime(e.target.value);
   };
 
+  
+
+  const cancelAppointment = async (id) => {
+    await axios.put(`http://localhost:5000/api/patient/cancel/${id}`);
+    fetchAppointments();
+  };
+
   const handleConfirm = async (doctor) => {
-    if (!selectedHospital || !selectedDay || !selectedTime) {
-      alert("Complete selections");
-      return;
-    }
+  if (!selectedHospital || !selectedDay || !selectedTime) {
+    alert("Please complete selections");
+    return;
+  }
 
-    await axios.post("http://localhost:5000/api/patient/book", {
-      patientId: user._id,
-      doctorName: doctor.name,
-      speciality: doctor.speciality,
-      hospital: selectedHospital,
-      date: selectedDay,
-      time: selectedTime,
-    });
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/api/patient/book",
+      {
+        patientId: user._id,
+        doctorName: doctor.name,
+        speciality: doctor.speciality,
+        hospital: selectedHospital,
+        date: selectedDay,
+        time: selectedTime,
+      }
+    );
 
-    alert("Booked");
+    alert("Appointment booked successfully");
+
+    
+    setLatestAppointment(res.data.appointment);
+
     fetchAppointments();
 
     setSelectedHospital("");
     setSelectedDay("");
     setSelectedTime("");
     setAvailableDoctors([]);
-  };
 
-  const cancelAppointment = async (id) => {
-    await axios.put(`http://localhost:5000/api/patient/cancel/${id}`);
-    fetchAppointments();
-  };
+  } catch (error) {
+    console.log(error);
+    alert("Booking failed");
+  }
+};
 
   const handleUploadRecord = async () => {
     if (!newRecordName) return;
@@ -178,10 +205,7 @@ function PatientDashboard() {
   const previousAppointments = appointments.filter(
     a => ["Closed", "Cancelled", "Rejected"].includes(a.status)
   );
-const [profile, setProfile] = useState({
-  name: user?.name || "",
-  email: user?.email || ""
-});
+
 
 const handleProfileUpdate = async () => {
   try {
@@ -274,6 +298,30 @@ const handleOrder = async () => {
                 <button onClick={() => handleConfirm(d)}>Confirm</button>
               </div>
             ))}
+            {latestAppointment && (
+  <div className="appointment-card highlight">
+
+    <p>
+      <strong>{latestAppointment.doctorName}</strong> ({latestAppointment.speciality})
+    </p>
+
+    <p> {latestAppointment.hospital}</p>
+
+    <p>
+      {latestAppointment.date} | {latestAppointment.time}
+    </p>
+
+    <p>Status: {latestAppointment.status}</p>
+
+    <button
+      className="cancel-btn"
+      onClick={() => cancelAppointment(latestAppointment._id)}
+    >
+      Cancel
+    </button>
+
+  </div>
+)}
 
             <h3>Upcoming</h3>
             {upcomingAppointments.map(a => (
@@ -283,6 +331,7 @@ const handleOrder = async () => {
               </div>
             ))}
           </>
+          
         )}
 
         {/* RECORDS */}
@@ -357,13 +406,61 @@ const handleOrder = async () => {
     <h3>Profile</h3>
 
     <input
+      placeholder="Enter Your Name"
       value={profile.name}
       onChange={(e) =>
         setProfile({ ...profile, name: e.target.value })
       }
     />
+    <input
+    placeholder="Enter Your Blood Group"
+      value={profile.bloodGroup}
+      onChange={(e) =>  
+        setProfile({ ...profile, bloodGroup: e.target.value })
+      }
+    />  
+    <input 
+    placeholder="Emergency Contact Name"
+      value={profile.emergencyContact.name}
+      onChange={(e) =>
+        setProfile({  
+          ...profile,
+          emergencyContact: {
+            ...profile.emergencyContact,  
+            name: e.target.value
+          }
+        })  
+      }
+    />
+    <input 
+    placeholder="Emergency Contact Ph_Number"
+      value={profile.emergencyContact.phone}
+      onChange={(e) =>
+        setProfile({  
+          ...profile,
+          emergencyContact: {
+            ...profile.emergencyContact,  
+            phone: e.target.value
+          }
+        })  
+      } 
+    />
+    <input 
+    placeholder="Type of relation"
+      value={profile.emergencyContact.relation}   
+      onChange={(e) =>
+        setProfile({  
+          ...profile,
+          emergencyContact: {
+            ...profile.emergencyContact,  
+            relation: e.target.value
+          }
+        })  
+      } 
+    />
 
     <input
+    placeholder="Enter Your Email"
       value={profile.email}
       onChange={(e) =>
         setProfile({ ...profile, email: e.target.value })
